@@ -1,0 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+        body {
+            box-sizing: border-box;
+            background-color: #c5e6fa;
+            font-family: "Poppins", sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            min-height: 100%;
+        }
+
+        /* ===== Card ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.37);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* ===== Form ===== */
+        form {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="url"] {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        input[type="url"]:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ===== Shortened URL Result ===== */
+        .result {
+            margin-top: 25px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .result p {
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .short-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            background: #f9fafa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .short-box a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .short-box a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== Copy Icon ===== */
+        .copy-icon {
+            cursor: pointer;
+            color: #28a745;
+            font-size: 18px;
+            transition: color 0.2s;
+            padding: 5px;
+        }
+
+        .copy-icon:hover {
+            color: #1e7e34;
+        }
+
+        /* ===== History Toggle Button ===== */
+        .toggle-history-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .toggle-history-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* ===== History Container ===== */
+        .history-container {
+            width: 90%;
+            max-width: 700px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .history {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .history h2 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .history-date-filter {
+            padding: 8px 12px;
+            border: 2px solid #007bff;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .url-text {
+            flex: 1;
+            text-align: left;
+            min-width: 200px;
+        }
+
+        .long-url {
+            display: block;
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .url-text a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .url-text a:hover {
+            text-decoration: underline;
+        }
+
+        .history-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .copy-delete {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-icon {
+            cursor: pointer;
+            color: #dc3545;
+            font-size: 16px;
+            transition: color 0.2s;
+            padding: 5px;
+        }
+
+        .delete-icon:hover {
+            color: #c82333;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #6c757d;
+            margin: 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            form {
+                flex-direction: column;
+            }
+
+            input[type="url"] {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .history-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .history-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .url-text {
+                text-align: center;
+            }
+        }
