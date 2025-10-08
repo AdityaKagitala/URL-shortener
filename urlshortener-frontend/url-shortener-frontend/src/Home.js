@@ -31,7 +31,7 @@ function Home() {
 
     e.preventDefault();
     if (!originalUrl.trim()) {
-      alert("Please enter a valid URL");
+      alert("Please enter a valid URL ..!");
       return;
     }
 
