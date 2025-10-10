@@ -1,6 +1,6 @@
 import "./App.css";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "./api/axiosConfig";
 import { FaCopy, FaLink, FaChevronDown, FaChevronUp ,FaTrash} from "react-icons/fa";
 import { toast } from 'react-toastify';
 
@@ -22,34 +22,16 @@ function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!originalUrl.trim()) {
       alert("Please enter a valid URL ..!");
       return;
     }
-  
-    setLoading(true);
-  
-    try {
-      // ✅ 1. Get JWT token from localStorage
-      const token = localStorage.getItem("token");
-  
-      // ✅ 2. Send it with the request
-      const response = await axios.post(
-        "http://localhost:8080/api/shorten",
-        { originalUrl },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          }
-          
-        }
-        
-      );
-      console.log("Sending token:", token);
 
-  
+    setLoading(true);
+
+    try {
+      const response = await axiosInstance.post("/shorten", { originalUrl });
       const short = response.data.shortUrl;
       setShortUrl(short);
       await fetchHistory();
@@ -73,15 +55,8 @@ function Home() {
 
   const fetchHistory = async () => {
     try {
-      const token = localStorage.getItem("token");
-  
-      const response = await axios.get("http://localhost:8080/api/history", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      // ✅ Defensive check
+      const response = await axiosInstance.get("/history");
+
       if (Array.isArray(response.data)) {
         setHistory(response.data);
       } else {
@@ -90,27 +65,15 @@ function Home() {
       }
     } catch (error) {
       console.error("Error fetching history:", error);
-      setHistory([]); // fallback to empty array
+      setHistory([]);
     }
   };
   
   const handleDelete = async (shortCode) => {
     try {
-      const token = localStorage.getItem("token");
-  
-      const response = await fetch(`http://localhost:8080/api/delete/${shortCode}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (response.status === 204 || response.status === 200) {
-        setHistory(prev => prev.filter(item => item.shortCode !== shortCode));
-        toast.error("Link Deleted Successfully!", { autoClose: 1000 });
-      } else {
-        alert("Failed to delete URL");
-      }
+      await axiosInstance.delete(`/delete/${shortCode}`);
+      setHistory(prev => prev.filter(item => item.shortCode !== shortCode));
+      toast.error("Link Deleted Successfully!", { autoClose: 1000 });
     } catch (error) {
       alert("Error deleting URL:", error);
     }

@@ -11,12 +11,9 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-
-      debugger
-      
-      const jwt = await login(username, password); // jwt is { token: "..." }
+      const jwt = await login(username, password);
       setToken(jwt);
-      localStorage.setItem('token', jwt); // Save the token string
+      localStorage.setItem('token', jwt);
       navigate('/');
     } catch (error) {
       setToken('Login failed');
