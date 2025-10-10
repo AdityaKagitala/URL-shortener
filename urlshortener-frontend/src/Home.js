@@ -1,19 +1,18 @@
-import "./App.css";
+import "./Home.css";
 import React, { useState, useEffect } from "react";
 import axiosInstance from "./api/axiosConfig";
-import { FaCopy, FaLink, FaChevronDown, FaChevronUp ,FaTrash} from "react-icons/fa";
+import { FaCopy, FaLink, FaChevronDown, FaChevronUp, FaTrash, FaExternalLinkAlt, FaCalendarAlt, FaClock } from "react-icons/fa";
 import { toast } from 'react-toastify';
 
 
 function Home() {
-
-  
   const [originalUrl, setOriginalUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(true); 
+  const [showHistory, setShowHistory] = useState(true);
   const [searchDate, setSearchDate] = useState("");
+  const [historyLoading, setHistoryLoading] = useState(true);
 
 
   useEffect(() => {  fetchHistory()  }, []);
@@ -24,7 +23,7 @@ function Home() {
     e.preventDefault();
 
     if (!originalUrl.trim()) {
-      alert("Please enter a valid URL ..!");
+      toast.error("Please enter a valid URL!");
       return;
     }
 
@@ -36,9 +35,10 @@ function Home() {
       setShortUrl(short);
       await fetchHistory();
       setOriginalUrl("");
+      toast.success("URL shortened successfully!");
     } catch (error) {
       console.error("Shortening error:", error);
-      alert("Something went wrong!");
+      toast.error("Failed to shorten URL. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -47,13 +47,14 @@ function Home() {
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Link Coppied..!", { autoClose: 1000 });
+      toast.success("Link copied to clipboard!", { autoClose: 1500 });
     } catch (error) {
       toast.error("Failed to copy");
     }
   };
 
   const fetchHistory = async () => {
+    setHistoryLoading(true);
     try {
       const response = await axiosInstance.get("/history");
 
@@ -66,6 +67,8 @@ function Home() {
     } catch (error) {
       console.error("Error fetching history:", error);
       setHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
   
@@ -73,95 +76,203 @@ function Home() {
     try {
       await axiosInstance.delete(`/delete/${shortCode}`);
       setHistory(prev => prev.filter(item => item.shortCode !== shortCode));
-      toast.error("Link Deleted Successfully!", { autoClose: 1000 });
+      toast.info("Link deleted successfully!", { autoClose: 1500 });
     } catch (error) {
-      alert("Error deleting URL:", error);
+      toast.error("Failed to delete link");
     }
   };
   
 
 
+  const filteredHistory = history
+    .slice()
+    .reverse()
+    .filter((item) => {
+      if (!searchDate || !item.createdAt) return true;
+      const itemDate = new Date(item.createdAt).toISOString().split("T")[0];
+      return itemDate === searchDate;
+    });
+
   return (
-    <div className="app">
-      <div className="card">
-        <h1><FaLink style={{ color: "#007bff" }} /> URL Shortener</h1>
-        <p className="subtitle">Paste your long URL below and get a short link instantly!</p>
-
-        <form onSubmit={handleSubmit}>
-          <input
-            type="url"
-            placeholder="Enter long URL..."
-            value={originalUrl}
-            onChange={(e) => setOriginalUrl(e.target.value)}
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? "Shortening..." : "Shorten URL"}
-          </button>
-        </form>
-
-        {shortUrl && (
-          <div className="result">
-            <p>Shortened URL:</p>
-            <div className="short-box">
-              <a href={shortUrl} target="_blank" rel="noopener noreferrer">
-                {shortUrl}
-              </a>
-              <FaCopy className="copy-icon" onClick={() => copyToClipboard(shortUrl)} />
+    <div className="home-page">
+      <div className="home-container">
+        {/* Hero Section */}
+        <div className="hero-section">
+          <div className="hero-content">
+            <div className="hero-icon">
+              <FaLink />
             </div>
+            <h1 className="hero-title">Shorten Your Links</h1>
+            <p className="hero-subtitle">Transform long URLs into short, shareable links in seconds</p>
           </div>
-        )}
-      </div>
 
-      <div className="history-container">
-        <button className="toggle-history-btn" onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? <FaChevronUp /> : <FaChevronDown />}
-          {showHistory ? "Hide History" : "Show History"}
-        </button>
+          {/* URL Shortener Card */}
+          <div className="shortener-card">
+            <form onSubmit={handleSubmit} className="shortener-form">
+              <div className="input-wrapper">
+                <FaLink className="input-prefix-icon" />
+                <input
+                  type="url"
+                  placeholder="Paste your long URL here..."
+                  value={originalUrl}
+                  onChange={(e) => setOriginalUrl(e.target.value)}
+                  className="url-input"
+                  required
+                />
+              </div>
+              <button type="submit" disabled={loading} className="shorten-btn">
+                {loading ? (
+                  <>
+                    <span className="spinner"></span>
+                    Shortening...
+                  </>
+                ) : (
+                  <>
+                    <FaExternalLinkAlt />
+                    Shorten
+                  </>
+                )}
+              </button>
+            </form>
 
-        {showHistory && Array.isArray(history) && history.length > 0 && (
-  <div className="history">
-    <div className="history-header">
-      <h2>Your History</h2>
-      <input
-        type="date"
-        className="history-date-filter"
-        value={searchDate}
-        onChange={(e) => setSearchDate(e.target.value)}
-      />
-    </div>
-
-    {history
-      .slice()
-      .reverse()
-      .filter((item) => {
-        if (!searchDate || !item.createdAt) return true;
-        const itemDate = new Date(item.createdAt).toISOString().split("T")[0];
-        return itemDate === searchDate;
-      })
-      .map((item, index) => (
-        <div key={index} className="history-item">
-          <div className="url-text">
-            <span className="long-url">{item.originalUrl}</span>
-            <a href={item.shortUrl} target="_blank" rel="noopener noreferrer">
-              {item.shortUrl}
-            </a>
-          </div>
-          <div className="history-actions">
-            <div className="copy-delete">
-              <FaCopy className="copy-icon" onClick={() => copyToClipboard(item.shortUrl)} />
-              <FaTrash className="delete-icon" onClick={() => handleDelete(item.shortCode)} />
-            </div>
-            {item.createdAt && (
-              <p className="timestamp">
-                {new Date(item.createdAt).toLocaleString()}
-              </p>
+            {shortUrl && (
+              <div className="result-section">
+                <div className="result-label">
+                  <FaLink className="result-icon" />
+                  Your shortened URL:
+                </div>
+                <div className="result-box">
+                  <a href={shortUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                    {shortUrl}
+                  </a>
+                  <button
+                    className="copy-btn"
+                    onClick={() => copyToClipboard(shortUrl)}
+                    title="Copy to clipboard"
+                  >
+                    <FaCopy />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
-      ))}
-  </div>
-)}
 
+        {/* History Section */}
+        <div className="history-section">
+          <div className="history-header-bar">
+            <div className="history-title">
+              <FaClock />
+              <h2>Recent Links</h2>
+              {history.length > 0 && (
+                <span className="history-count">{history.length}</span>
+              )}
+            </div>
+
+            <div className="history-controls">
+              <div className="date-filter">
+                <FaCalendarAlt className="filter-icon" />
+                <input
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  className="date-input"
+                  placeholder="Filter by date"
+                />
+              </div>
+              <button
+                className="toggle-btn"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                {showHistory ? <FaChevronUp /> : <FaChevronDown />}
+              </button>
+            </div>
+          </div>
+
+          {showHistory && (
+            <div className="history-content">
+              {historyLoading ? (
+                <div className="loading-state">
+                  <span className="spinner large"></span>
+                  <p>Loading your links...</p>
+                </div>
+              ) : filteredHistory.length > 0 ? (
+                <div className="history-grid">
+                  {filteredHistory.map((item, index) => (
+                    <div key={index} className="history-card">
+                      <div className="card-content">
+                        <div className="url-info">
+                          <label className="url-label">Original URL</label>
+                          <p className="original-url" title={item.originalUrl}>
+                            {item.originalUrl}
+                          </p>
+                        </div>
+
+                        <div className="url-info">
+                          <label className="url-label">Short URL</label>
+                          <div className="short-url-container">
+                            <a
+                              href={item.shortUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="short-url"
+                            >
+                              {item.shortUrl}
+                            </a>
+                          </div>
+                        </div>
+
+                        {item.createdAt && (
+                          <div className="card-footer">
+                            <span className="timestamp">
+                              <FaClock />
+                              {new Date(item.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="card-actions">
+                        <button
+                          className="action-btn copy"
+                          onClick={() => copyToClipboard(item.shortUrl)}
+                          title="Copy link"
+                        >
+                          <FaCopy />
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          onClick={() => handleDelete(item.shortCode)}
+                          title="Delete link"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <FaLink className="empty-icon" />
+                  <p className="empty-title">
+                    {searchDate ? 'No links found for this date' : 'No links yet'}
+                  </p>
+                  <p className="empty-subtitle">
+                    {searchDate
+                      ? 'Try selecting a different date'
+                      : 'Start by shortening your first URL above'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
