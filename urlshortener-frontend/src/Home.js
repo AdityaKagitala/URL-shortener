@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 
 
 function Home() {
+
   const [originalUrl, setOriginalUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);

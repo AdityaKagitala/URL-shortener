@@ -34,10 +34,15 @@ public class UrlMapping {
     @Column(nullable = false)
     private Long clickCount = 0L;
 
-    public UrlMapping(String originalUrl, String shortCode, Instant createdAt) {
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public UrlMapping(String originalUrl, String shortCode, Instant createdAt, User user) {
         this.originalUrl = originalUrl;
         this.shortCode = shortCode;
         this.createdAt = createdAt;
+        this.user = user;
     }
 
     public void incrementClickCount() { this.clickCount = this.clickCount + 1; }

@@ -1,9 +1,13 @@
 package com.example.urlshortener.service;
 
 import com.example.urlshortener.model.UrlMapping;
+import com.example.urlshortener.model.User;
 import com.example.urlshortener.repository.UrlRepository;
+import com.example.urlshortener.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,10 @@ public class UrlService {
     private final UrlRepository urlrepository;
     private final ShortCodeGenerator codeGenerator;
 
+    private final UserRepository userRepository;
+
+    private final User user = new User();
+
     // short code length - you can tweak (6 is common)
     private final int codeLength;
 
@@ -26,10 +34,11 @@ public class UrlService {
 
     public UrlService(UrlRepository urlrepository,
                       ShortCodeGenerator codeGenerator,
-                      @Value("${app.shortcode.length:6}") int codeLength) {
+                      @Value("${app.shortcode.length:6}") int codeLength, UserRepository userRepository) {
         this.urlrepository = urlrepository;
         this.codeGenerator = codeGenerator;
         this.codeLength = codeLength;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -38,11 +47,16 @@ public class UrlService {
      * return existing mapping for the same originalUrl.
      */
     public UrlMapping createShortUrl(String originalUrl) {
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         // generate code and ensure no collision
         for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
             String code = codeGenerator.generate(codeLength);
             if (!urlrepository.existsByShortCode(code)) {
-                UrlMapping mapping = new UrlMapping(originalUrl, code, Instant.now());
+                UrlMapping mapping = new UrlMapping(originalUrl, code, Instant.now(), user);
                 return urlrepository.save(mapping);
             }
         }
@@ -68,7 +82,10 @@ public class UrlService {
     }
 
     public List<UrlMapping> getHistory(){
-        return urlrepository.findAll();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return urlrepository.findAllByuser(user);
     }
 
     public boolean deleteByShortCode(String shortCode) {

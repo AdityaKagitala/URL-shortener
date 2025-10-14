@@ -5,6 +5,7 @@ import { FaSignInAlt, FaUser, FaLock } from 'react-icons/fa';
 import './LoginPage.css';
 
 const LoginPage = () => {
+
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,11 +21,9 @@ const LoginPage = () => {
       const jwt = await login(username, password);
       localStorage.setItem('token', jwt);
       navigate('/');
-    } catch (error) {
-      setError('Invalid username or password');
-    } finally {
-      setLoading(false);
-    }
+    } 
+    catch (error) { setError('Invalid username or password') }
+      finally { setLoading(false); }
   };
 
   return (
