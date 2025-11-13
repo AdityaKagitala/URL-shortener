@@ -1,8 +1,9 @@
 import "./Home.css";
 import React, { useState, useEffect } from "react";
 import axiosInstance from "./api/axiosConfig";
-import { FaCopy, FaLink, FaChevronDown, FaChevronUp, FaTrash, FaExternalLinkAlt, FaCalendarAlt, FaClock } from "react-icons/fa";
+import { FaCopy, FaLink, FaChevronDown, FaChevronUp,FaTrash, FaExternalLinkAlt, FaCalendarAlt, FaClock,FaShareAlt} from "react-icons/fa";
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 
 function Home() {
@@ -18,6 +19,11 @@ function Home() {
 
   useEffect(() => {  fetchHistory()  }, []);
 
+  const navigate = useNavigate();
+
+  const handleViewAnalytics = (shortCode) => {
+    navigate(`/viewLink/${shortCode}`);
+  };
   
 
   const handleSubmit = async (e) => {
@@ -202,6 +208,13 @@ function Home() {
                   {filteredHistory.map((item, index) => (
                     <div key={index} className="history-card">
                       <div className="card-content">
+                      <div className="url-info">
+                          <label className="url-label">TITLE:</label>
+                          <p className="original-url" title={index}>
+                           name {index}
+                          </p>
+                        </div>
+
                         <div className="url-info">
                           <label className="url-label">Original URL</label>
                           <p className="original-url" title={item.originalUrl}>
@@ -248,13 +261,24 @@ function Home() {
                           <FaCopy />
                         </button>
                         <button
+                          className="action-btn share"
+                          onClick={() => copyToClipboard(item.shortUrl)}
+                          title="Copy link"
+                        >
+                          <FaShareAlt />
+                        </button>
+                        <button
                           className="action-btn delete"
                           onClick={() => handleDelete(item.shortCode)}
                           title="Delete link"
                         >
                           <FaTrash />
                         </button>
+                        <button className="view-tracking-btn" onClick={() => handleViewAnalytics(item.shortCode)}>
+                             View Tracking
+                          </button>
                       </div>
+                      
                     </div>
                   ))}
                 </div>

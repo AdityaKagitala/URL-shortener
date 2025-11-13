@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -37,6 +39,10 @@ public class UrlMapping {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "urlMapping", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ViewLink> viewLinks = new ArrayList<>();
+
 
     public UrlMapping(String originalUrl, String shortCode, Instant createdAt, User user) {
         this.originalUrl = originalUrl;

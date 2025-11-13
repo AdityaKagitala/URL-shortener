@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
-
+import AnalyticsPage from './analyticsPage/AnalyticsPage';
 
 const App = () => {
   return (
@@ -23,6 +23,7 @@ const App = () => {
               <Home />
             </ProtectedRoute>
           } />
+          <Route path="/viewLink/:shortCode" element={<AnalyticsPage />} />
         </Routes>
         <ToastContainer position="bottom-right" />
       </main>
