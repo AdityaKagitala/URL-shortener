@@ -37,7 +37,8 @@ public class ApiController {
 
         UrlResponse resp = new UrlResponse(mapping.getOriginalUrl(),
                                             shortUrl,
-                                            mapping.getShortCode());
+                                            mapping.getShortCode(),
+                                            mapping.getFaviconUrl());
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
@@ -58,7 +59,11 @@ public class ApiController {
                     String shortUrl = appBaseUrl.endsWith("/") ? appBaseUrl + mapping.getShortCode()
                                                                : appBaseUrl + "/" + mapping.getShortCode();
 
-                    return new UrlHistoryResponse (mapping.getOriginalUrl(), shortUrl, mapping.getCreatedAt(), mapping.getShortCode());
+                    return new UrlHistoryResponse (mapping.getOriginalUrl(),
+                            shortUrl,
+                            mapping.getCreatedAt(),
+                            mapping.getShortCode(),
+                            mapping.getFaviconUrl());
                     }).toList();
         return ResponseEntity.ok(responseList);
     }

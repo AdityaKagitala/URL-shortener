@@ -9,5 +9,5 @@ import java.util.Optional;
 
 public interface ViewLinkRepository extends JpaRepository<ViewLink, Long> {
 
-    List<ViewLink> findByUrlMapping(Optional<UrlMapping> mapping);
+    List<ViewLink> findByUrlMapping(UrlMapping mapping);
 }

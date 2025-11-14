@@ -217,8 +217,13 @@ function Home() {
 
                         <div className="url-info">
                           <label className="url-label">Original URL</label>
+                          {/*Website icon*/}
+                          
                           <p className="original-url" title={item.originalUrl}>
+                          <div className="history-item">
+                            <img src={item.faviconUrl} alt="icon"  style={{ width: 24, height: 24, marginRight: 10 }}/>
                             {item.originalUrl}
+                          </div>
                           </p>
                         </div>
 

@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,16 +22,15 @@ public class UrlService {
 
     private final UrlRepository urlrepository;
     private final ShortCodeGenerator codeGenerator;
-
     private final UserRepository userRepository;
 
     private final User user = new User();
 
     // short code length - you can tweak (6 is common)
     private final int codeLength;
-
     // maximum attempts when checking collisions
     private static final int MAX_GENERATION_ATTEMPTS = 5;
+
 
     public UrlService(UrlRepository urlrepository,
                       ShortCodeGenerator codeGenerator,
@@ -41,11 +41,37 @@ public class UrlService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Create (or reuse) a short code for the given original URL.
-     * This implementation always creates a new mapping. You could extend to
-     * return existing mapping for the same originalUrl.
-     */
+    public String extractDomain(String url) {
+        try {
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "https://" + url;  // auto-fix missing scheme
+            }
+
+            URI uri = new URI(url);
+            String host = uri.getHost();
+
+            if (host == null) {
+                throw new RuntimeException("Invalid host");
+            }
+
+            return uri.getScheme() + "://" + host;
+
+        } catch (Exception e) {
+            System.out.println("DOMAIN ERROR: " + e.getMessage());
+            return "https://www.google.com";   // fallback to avoid breaking shortening
+        }
+    }
+
+    public String getFaviconUrl(String url) {
+        String domain = extractDomain(url);
+        return domain + "/favicon.ico";
+    }
+    public String getFaviconWithFallback(String url) {
+        String domain = extractDomain(url);
+
+        return "https://www.google.com/s2/favicons?domain=" + domain;
+    }
+
     public UrlMapping createShortUrl(String originalUrl) {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -56,7 +82,15 @@ public class UrlService {
         for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
             String code = codeGenerator.generate(codeLength);
             if (!urlrepository.existsByShortCode(code)) {
-                UrlMapping mapping = new UrlMapping(originalUrl, code, Instant.now(), user);
+                UrlMapping mapping = UrlMapping.builder()
+                        .originalUrl(originalUrl)
+                        .shortCode(code)
+                        .createdAt(Instant.now())
+                        .clickCount(0L)
+                        .user(user)
+                        .faviconUrl(getFaviconWithFallback(originalUrl))
+
+                        .build();
                 return urlrepository.save(mapping);
             }
         }

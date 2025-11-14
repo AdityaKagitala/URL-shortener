@@ -1,123 +1,159 @@
-/* ===== Popup Overlay ===== */
-.popup-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(197, 230, 250, 0.7); /* matches home-page bg but translucent */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    padding: 20px;
-    backdrop-filter: blur(6px);
-  }
-  
-  /* ===== Popup Container ===== */
-  .popup-container {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0, 123, 255, 0.15);
-    max-width: 480px;
-    width: 100%;
-    padding: 30px 35px;
-    font-family: 'Poppins', sans-serif;
-    color: #333;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    animation: fadeInUp 0.5s ease forwards;
-    position: relative;
-  }
-  
-  /* ===== Popup Title ===== */
-  .popup-container h2 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    text-align: center;
-    color: #007bff;
-    margin: 0;
-  }
-  
-  /* ===== Total Clicks Text ===== */
-  .total-clicks {
-    font-size: 1.25rem;
-    font-weight: 600;
-    text-align: center;
-    color: #495057;
-    background-color: #5caafcba;
-  }
-  
-  /* ===== Platform Clicks List ===== */
-  .platform-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 220px;
-    overflow-y: auto;
-    border-top: 1px solid rgba(0, 123, 255, 0.15);
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .platform-list li {
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #333;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-    transition: background-color 0.3s ease;
-  }
-  
-  .platform-list li:hover {
-    background-color: rgba(102, 126, 234, 0.25);
-  }
-  
-  /* ===== Close Button ===== */
-  .popup-close-btn {
-    position: absolute;
-    top: 18px;
-    right: 20px;
-    background: transparent;
-    border: none;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #007bff;
-    cursor: pointer;
-    transition: color 0.2s ease;
-  }
-  
-  .popup-close-btn:hover {
-    color: #0056b3;
-  }
-  
-  /* ===== Animations from home.js style ===== */
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  /* ===== Responsive ===== */
-  @media (max-width: 480px) {
-    .popup-container {
-      padding: 20px 25px;
-    }
-  
-    .popup-container h2 {
-      font-size: 1.5rem;
-    }
-  
-    .total-clicks {
-      font-size: 1.1rem;
-    }
-  }
-  
+/* ===========================================================
+   APPLE STYLE – CLEAN, SOFT, FROSTED LIGHT ANALYTICS UI
+   =========================================================== */
+
+/* ===== Overlay ===== */
+.analytics-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(240, 240, 245, 0.55); /* Soft Apple fog */
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.4s ease;
+}
+
+/* ===== Modal Box ===== */
+.analytics-modal {
+  width: 92%;
+  max-width: 980px;
+  background: rgba(255, 255, 255, 0.8); /* Light frosted white */
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border-radius: 22px;
+  padding: 40px;
+  border: 1px solid rgba(200, 200, 200, 0.35);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  position: relative;
+  animation: scaleIn 0.35s ease-out;
+  overflow-y: auto;
+  max-height: 90vh;
+  color: #2c2c2e;
+}
+
+/* ===== Close Button ===== */
+.analytics-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  background: #ff3b30; /* iOS red */
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+  transition: 0.25s ease;
+  box-shadow: 0 2px 10px rgba(255, 59, 48, 0.4);
+}
+
+.analytics-close-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(255, 59, 48, 0.55);
+}
+
+/* ===== Title ===== */
+.analytics-title {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  color: #1c1c1e; /* Apple dark text */
+  margin-bottom: 20px;
+}
+
+/* ===== Total Clicks ===== */
+.analytics-total-clicks {
+  text-align: center;
+  font-size: 20px;
+  color: #007aff; /* iOS Blue */
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+/* ===== Platform List ===== */
+.analytics-platform-list {
+  list-style: none;
+  padding: 0;
+  margin: 25px 0;
+}
+
+.analytics-platform-item {
+  background: rgba(255, 255, 255, 0.65);
+  padding: 14px 16px;
+  margin: 10px 0;
+  border-radius: 14px;
+  border-left: 5px solid #007aff; /* Apple blue */
+  font-size: 15px;
+  font-weight: 600;
+  color: #1c1c1e;
+  box-shadow: 0 6px 12px rgba(0, 122, 255, 0.1);
+}
+
+/* ===== Table ===== */
+.analytics-table {
+  width: 100%;
+  margin-top: 25px;
+  border-collapse: collapse;
+  color: #1c1c1e;
+}
+
+.analytics-table th {
+  background: #e8e9ec;
+  color: #1c1c1e;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 8px 8px 0 0;
+  letter-spacing: 0.3px;
+}
+
+.analytics-table td {
+  padding: 13px;
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(200, 200, 200, 0.35);
+  transition: 0.25s ease;
+}
+
+.analytics-row:hover td {
+  background: rgba(230, 230, 235, 0.8);
+}
+
+.chart-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 18px;
+  padding: 25px;
+  box-shadow: 0px 10px 30px rgba(0, 68, 140, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease;
+}
+
+
+/* ===== Scrollbar ===== */
+.analytics-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.analytics-modal::-webkit-scrollbar-thumb {
+  background: #bfc2c7;
+  border-radius: 10px;
+}
+
+.analytics-modal::-webkit-scrollbar-track {
+  background: rgba(240, 240, 245, 0.4);
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
