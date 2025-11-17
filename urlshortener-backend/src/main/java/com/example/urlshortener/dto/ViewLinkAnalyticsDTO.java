@@ -23,4 +23,9 @@ public class ViewLinkAnalyticsDTO {
     @Column(length = 100)
     private String platform;
     private String browser;
+
+    private String title;
+    private String description;
+    private String imageUrl;
+    private String faviconUrl;
 }

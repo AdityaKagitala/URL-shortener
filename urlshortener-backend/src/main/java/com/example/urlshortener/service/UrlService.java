@@ -1,10 +1,13 @@
 package com.example.urlshortener.service;
 
+import com.example.urlshortener.dto.UrlPreview;
 import com.example.urlshortener.model.UrlMapping;
 import com.example.urlshortener.model.User;
 import com.example.urlshortener.repository.UrlRepository;
 import com.example.urlshortener.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,131 +16,158 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UrlService {
 
     private final UrlRepository urlrepository;
     private final ShortCodeGenerator codeGenerator;
     private final UserRepository userRepository;
 
-    private final User user = new User();
+    @Value("${app.shortcode.length:6}")
+    private int codeLength;
 
-    // short code length - you can tweak (6 is common)
-    private final int codeLength;
-    // maximum attempts when checking collisions
     private static final int MAX_GENERATION_ATTEMPTS = 5;
 
-
-    public UrlService(UrlRepository urlrepository,
-                      ShortCodeGenerator codeGenerator,
-                      @Value("${app.shortcode.length:6}") int codeLength, UserRepository userRepository) {
-        this.urlrepository = urlrepository;
-        this.codeGenerator = codeGenerator;
-        this.codeLength = codeLength;
-        this.userRepository = userRepository;
-    }
-
-    public String extractDomain(String url) {
+    // ----------------- LINK PREVIEW EXTRACTOR -----------------
+    public UrlPreview fetchPreviewMetadata(String url) {
         try {
-            if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                url = "https://" + url;  // auto-fix missing scheme
-            }
+            Document doc = Jsoup.connect(url).timeout(5000).get();
 
-            URI uri = new URI(url);
-            String host = uri.getHost();
+            String title = doc.select("meta[property=og:title]").attr("content");
+            if (title.isEmpty()) title = doc.title();
 
-            if (host == null) {
-                throw new RuntimeException("Invalid host");
-            }
+            String description = doc.select("meta[property=og:description]").attr("content");
+            if (description.isEmpty())
+                description = doc.select("meta[name=description]").attr("content");
 
-            return uri.getScheme() + "://" + host;
+            String image = doc.select("meta[property=og:image]").attr("content");
+
+            String domain = extractDomain(url);
+
+            return new UrlPreview(
+                    title != null ? title : "No title",
+                    description != null ? description : "No description",
+                    image,
+                    domain + "/favicon.ico"
+            );
 
         } catch (Exception e) {
-            System.out.println("DOMAIN ERROR: " + e.getMessage());
-            return "https://www.google.com";   // fallback to avoid breaking shortening
+            return new UrlPreview(
+                    "Preview Not Available",
+                    "No description found",
+                    null,
+                    "https://www.google.com/s2/favicons?domain=" + url
+            );
         }
     }
 
-    public String getFaviconUrl(String url) {
-        String domain = extractDomain(url);
-        return domain + "/favicon.ico";
-    }
-    public String getFaviconWithFallback(String url) {
-        String domain = extractDomain(url);
 
-        return "https://www.google.com/s2/favicons?domain=" + domain;
-    }
-
-
+    // ----------------- SHORT URL CREATION -----------------
     @Transactional
     public UrlMapping createShortUrl(String originalUrl, String customAlias) {
-
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // Custom alias
+        // ⭐ CUSTOM ALIAS ----------------------------------
         if (customAlias != null && !customAlias.isBlank()) {
-
-            if (urlrepository.existsByShortCode(customAlias)) {
+            String alias = customAlias.trim();
+            if (urlrepository.existsByShortCode(alias)) {
                 throw new RuntimeException("Custom alias already taken!");
             }
 
+            // Fetch preview metadata
+            UrlPreview preview = fetchPreviewMetadata(originalUrl);
+
             UrlMapping mapping = UrlMapping.builder()
                     .originalUrl(originalUrl)
-                    .shortCode(customAlias)
+                    .shortCode(alias)
                     .createdAt(Instant.now())
                     .clickCount(0L)
                     .user(user)
                     .faviconUrl(getFaviconUrl(originalUrl))
+                    .title(preview.getTitle())
+                    .description(preview.getDescription())
+                    .imageUrl(preview.getImage())
                     .build();
 
             return urlrepository.save(mapping);
         }
 
-        // STEP 1 — Save without shortcode so DB generates ID
-        UrlMapping tmp = UrlMapping.builder()
-                .originalUrl(originalUrl)
-                .createdAt(Instant.now())
-                .clickCount(0L)
-                .user(user)
-                .faviconUrl(getFaviconUrl(originalUrl))
-                .build();
+        // ⭐ AUTO-GENERATED SHORT CODE -----------------------
+        int maxAttempts = 5;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
 
-        tmp = urlrepository.save(tmp);
+            String code = codeGenerator.random(codeLength);
 
-        // STEP 2 — Encode ID to Base62 with your generator
-        String shortCode = codeGenerator.encodeBase62(tmp.getId());
+            // Fetch preview metadata
+            UrlPreview preview = fetchPreviewMetadata(originalUrl);
 
-        // STEP 3 — Save again with shortCode
-        tmp.setShortCode(shortCode);
-        return urlrepository.save(tmp);
+            UrlMapping mapping = UrlMapping.builder()
+                    .originalUrl(originalUrl)
+                    .shortCode(code)
+                    .createdAt(Instant.now())
+                    .clickCount(0L)
+                    .user(user)
+                    .faviconUrl(getFaviconUrl(originalUrl))
+                    .title(preview.getTitle())
+                    .description(preview.getDescription())
+                    .imageUrl(preview.getImage())
+                    .build();
+            try {
+                return urlrepository.save(mapping);
+
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                // collision → retry with new code
+            }
+        }
+
+        throw new RuntimeException("Failed to generate unique shortcode after " + maxAttempts + " attempts");
     }
 
 
+    // ----------------- DOMAIN & FAVICON -----------------
+    public String extractDomain(String url) {
+        try {
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "https://" + url;
+            }
+            URI uri = new URI(url);
+            String host = uri.getHost();
+            if (host == null) throw new RuntimeException("Invalid host");
+            return uri.getScheme() + "://" + host;
+        } catch (Exception e) {
+            System.out.println("DOMAIN ERROR: " + e.getMessage());
+            return "https://www.google.com";
+        }
+    }
 
-    /**
-     * Find mapping by shortCode
-     */
+    public String getFaviconUrl(String url) {
+        return extractDomain(url) + "/favicon.ico";
+    }
+
+    public String getFaviconWithFallback(String url) {
+        return "https://www.google.com/s2/favicons?domain=" + extractDomain(url);
+    }
+
+
+    // ----------------- OTHER SERVICES -----------------
     @Transactional
     public Optional<UrlMapping> findByShortCode(String shortCode) {
         return urlrepository.findByShortCode(shortCode);
     }
 
-    /**
-     * Increment click count (inside transaction)
-     */
     @Transactional
     public void incrementClicks(UrlMapping mapping) {
         mapping.incrementClickCount();
         urlrepository.save(mapping);
     }
 
-    public List<UrlMapping> getHistory(){
+    public List<UrlMapping> getHistory() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
@@ -152,5 +182,4 @@ public class UrlService {
         }
         return false;
     }
-
 }

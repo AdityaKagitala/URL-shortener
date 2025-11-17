@@ -39,6 +39,11 @@ public class UrlMapping {
 
     private String faviconUrl;
 
+    //Link Preview
+    private String title;
+    private String description;
+    private String imageUrl;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

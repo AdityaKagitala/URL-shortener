@@ -10,7 +10,8 @@ import {
   FaExternalLinkAlt,
   FaCalendarAlt,
   FaClock,
-  FaShareAlt,FaBeer,
+  FaShareAlt,
+  FaBeer,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -26,14 +27,45 @@ function Home() {
   const [searchDate, setSearchDate] = useState("");
   const [historyLoading, setHistoryLoading] = useState(true);
 
+  // ⭐ NEW: Preview state
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   useEffect(() => {
     fetchHistory();
   }, []);
+
+  // ⭐ Auto-load preview when typing URL
+  useEffect(() => {
+    if (!originalUrl.trim()) {
+      setPreview(null);
+      return;
+    }
+
+    const delay = setTimeout(() => {
+      fetchPreview(originalUrl);
+    }, 500);
+
+    return () => clearTimeout(delay);
+  }, [originalUrl]);
 
   const navigate = useNavigate();
 
   const handleViewAnalytics = (shortCode) => {
     navigate(`/viewLink/${shortCode}`);
+  };
+
+  // ⭐ Fetch Link Preview From Backend
+  const fetchPreview = async (url) => {
+    try {
+      setPreviewLoading(true);
+      const response = await axiosInstance.post("/preview", { url });
+      setPreview(response.data);
+    } catch (err) {
+      setPreview(null);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -49,8 +81,8 @@ function Home() {
     try {
       const response = await axiosInstance.post("/shorten", {
         originalUrl,
-        customAlias, // SEND CUSTOM ALIAS
-        linkTitle, // SEND LINK TITLE
+        customAlias,
+        linkTitle,
       });
 
       const short = response.data.shortUrl;
@@ -60,6 +92,7 @@ function Home() {
       setOriginalUrl("");
       setCustomAlias("");
       setLinkTitle("");
+      setPreview(null);
 
       toast.success("URL shortened successfully!");
     } catch (error) {
@@ -127,6 +160,7 @@ function Home() {
   return (
     <div className="home-page">
       <div className="home-container">
+
         {/* Hero Section */}
         <div className="hero-section">
           <div className="hero-content">
@@ -143,10 +177,10 @@ function Home() {
           <div className="shortener-card">
             <form onSubmit={handleSubmit} className="shortener-form">
 
-              {/* Custom Alias and New Field Row */}
+              {/* Custom fields */}
               <div className="custom-fields-row">
 
-                {/* Link Title Input */}
+                {/* Link Title */}
                 <div className="link-title-wrapper">
                   <label className="link-title-label">Link Title:</label>
                   <div className="input-wrapper">
@@ -160,15 +194,15 @@ function Home() {
                     />
                   </div>
                 </div>
-                
-                {/* Custom Alias Input */}
+
+                {/* Custom Alias */}
                 <div className="custom-alias-wrapper">
                   <label className="custom-alias-label">Custom Alias:</label>
                   <div className="input-wrapper">
                     <FaBeer className="input-prefix-icon" />
                     <input
                       type="text"
-                      placeholder="Enter custom alias (optional) e.g. aditya123"
+                      placeholder="Enter custom alias (optional)"
                       value={customAlias}
                       onChange={(e) => setCustomAlias(e.target.value)}
                       className="custom-alias-input"
@@ -177,8 +211,9 @@ function Home() {
                 </div>
               </div>
 
-              {/* Long URL Input and Submit Button */}
+              {/* URL Input + Submit */}
               <div className="url-submit-wrapper">
+
                 <div className="input-wrapper">
                   <FaLink className="input-prefix-icon" />
                   <input
@@ -192,21 +227,61 @@ function Home() {
                 </div>
 
                 <button type="submit" disabled={loading} className="shorten-btn">
-                {loading ? (
-                  <>
-                    <span className="spinner"></span>
-                    Shortening...
-                  </>
-                ) : (
-                  <>
-                    <FaExternalLinkAlt />
-                    Shorten
-                  </>
-                )}
-              </button>
+                  {loading ? (
+                    <>
+                      <span className="spinner"></span>
+                      Shortening...
+                    </>
+                  ) : (
+                    <>
+                      <FaExternalLinkAlt />
+                      Shorten
+                    </>
+                  )}
+                </button>
               </div>
+
+              {/* ⭐ LINK PREVIEW CARD */}
+              {originalUrl && (
+                <div className="preview-wrapper">
+                  {previewLoading ? (
+                    <div className="preview-loading">
+                      <span className="spinner"></span>
+                      <p>Fetching preview...</p>
+                    </div>
+                  ) : preview ? (
+                    <div className="preview-card">
+                      <div className="preview-image-section">
+                        <img
+                          src={preview.image || preview.favicon}
+                          alt="Preview"
+                          className="preview-image"
+                        />
+                      </div>
+
+                      <div className="preview-details">
+                        <h3 className="preview-title">{preview.title}</h3>
+                        <p className="preview-description">{preview.description}</p>
+
+                        <div className="preview-domain">
+                          <img
+                            src={preview.favicon}
+                            alt="favicon"
+                            className="preview-favicon"
+                          />
+                          <span>{new URL(originalUrl).hostname}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="preview-error">No preview available for this URL</p>
+                  )}
+                </div>
+              )}
+
             </form>
 
+            {/* Result Short URL */}
             {shortUrl && (
               <div className="result-section">
                 <div className="result-label">
@@ -235,6 +310,11 @@ function Home() {
         </div>
 
         {/* History Section */}
+        {/* (KEEP YOUR EXISTING HISTORY CODE AS IT IS — UNCHANGED) */}
+        {/* ============================== */}
+        {/* Your history section continues below */}
+        {/* ============================== */}
+
         <div className="history-section">
           <div className="history-header-bar">
             <div className="history-title">
@@ -367,6 +447,7 @@ function Home() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

@@ -12,10 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 import java.util.Optional;
-
 
 @Controller
 public class RedirectController {
@@ -31,9 +31,9 @@ public class RedirectController {
         this.viewLinkRepository = viewLinkRepository;
         this.viewLinkService = viewLinkService;
     }
+
     @GetMapping("/{shortCode}")
     public ResponseEntity<Object> redirect(@PathVariable String shortCode, HttpServletRequest request) {
-
 
         UrlMapping mapping = urlService.findByShortCode(shortCode)
                 .orElseThrow(() -> new RuntimeException("Not Found"));
@@ -42,6 +42,30 @@ public class RedirectController {
         if (originalUrl == null) {
             return ResponseEntity.notFound().build();
         }
+
+        // ------------------ ⭐ BOT DETECTION FOR LINK PREVIEW ⭐ ------------------
+        String agent = request.getHeader("User-Agent").toLowerCase();
+
+        boolean isBot =
+                agent.contains("facebook") ||
+                        agent.contains("twitter") ||
+                        agent.contains("whatsapp") ||
+                        agent.contains("wawebclient") ||
+                        agent.contains("whatsapp/") ||
+                        agent.contains("telegram") ||
+                        agent.contains("slackbot");
+
+        if (isBot) {
+            ModelAndView mav = new ModelAndView("preview");
+            mav.addObject("title", mapping.getTitle());
+            mav.addObject("description", mapping.getDescription());
+            mav.addObject("image", mapping.getImageUrl());
+            mav.addObject("originalUrl", mapping.getOriginalUrl());
+            return new ResponseEntity<>(mav, HttpStatus.OK);
+        }
+
+        // ------------------ ⭐ NORMAL USER REDIRECT + TRACKING ⭐ ------------------
+
         // Device detection
         String userAgent = request.getHeader("User-Agent").toLowerCase();
         String deviceType = userAgent.contains("mobi") ? "mobile" : "desktop";
@@ -53,21 +77,21 @@ public class RedirectController {
         String referer = request.getHeader("Referer");
         String platform = getReferringPlatform(referer);
 
+        // Save click info
+        viewLinkService.saveClickData(shortCode, deviceType, referer, platform, browser);
 
-        //Save click info
-        viewLinkService.saveClickData(shortCode,deviceType,referer,platform,browser);
-
-
-        // Total ClickCount
+        // Total click count
         urlService.incrementClicks(mapping);
 
-        // redirect (302) to original URL
+        // Redirect to original URL
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Location",originalUrl);
+        headers.add("Location", originalUrl);
 
-        return new ResponseEntity<>(headers,HttpStatus.FOUND);
-
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
+
+
+    // ===================== HELPER FUNCTIONS =====================
 
     private String getReferringPlatform(String referer) {
         if (referer == null || referer.isEmpty()) return "Direct";
@@ -81,7 +105,6 @@ public class RedirectController {
         if (referer.contains("linkedin.com")) return "LinkedIn";
         if (referer.contains("instagram.com")) return "Instagram";
 
-        // Fallback: extract domain from URL
         try {
             java.net.URI uri = new java.net.URI(referer);
             String host = uri.getHost();
@@ -93,51 +116,56 @@ public class RedirectController {
         }
     }
 
-        private String getBrowser(String userAgent) {
-            if (userAgent.contains("chrome") && !userAgent.contains("edge") && !userAgent.contains("opr")) {
-                return "Chrome";
-            } else if (userAgent.contains("firefox")) {
-                return "Firefox";
-            } else if (userAgent.contains("safari") && !userAgent.contains("chrome")) {
-                return "Safari";
-            } else if (userAgent.contains("edge")) {
-                return "Edge";
-            } else if (userAgent.contains("opr") || userAgent.contains("opera")) {
-                return "Opera";
-            }
-            return "Unknown";
+    private String getBrowser(String userAgent) {
+        if (userAgent.contains("chrome") && !userAgent.contains("edge") && !userAgent.contains("opr")) {
+            return "Chrome";
+        } else if (userAgent.contains("firefox")) {
+            return "Firefox";
+        } else if (userAgent.contains("safari") && !userAgent.contains("chrome")) {
+            return "Safari";
+        } else if (userAgent.contains("edge")) {
+            return "Edge";
+        } else if (userAgent.contains("opr") || userAgent.contains("opera")) {
+            return "Opera";
         }
+        return "Unknown";
+    }
 
 
-  @GetMapping("/viewLink/{shortCode}")
+    // ===================== VIEW LINK ANALYTICS =====================
+
+    @GetMapping("/viewLink/{shortCode}")
     public ResponseEntity<List<ViewLinkAnalyticsDTO>> viewLinkDetails(@PathVariable String shortCode) {
         Optional<UrlMapping> mappingOpt = urlService.findByShortCode(shortCode);
 
-      if (mappingOpt.isEmpty()) {
-          return ResponseEntity.notFound().build();
-      }
+        if (mappingOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
+        UrlMapping mapping = mappingOpt.get();
+        List<ViewLink> viewLinks = viewLinkRepository.findByUrlMapping(mapping);
 
-      UrlMapping mapping = mappingOpt.get();
-      List<ViewLink> viewLinks = viewLinkRepository.findByUrlMapping(mapping);
+        List<ViewLinkAnalyticsDTO> dtoList = viewLinks.stream().map(viewLink -> {
+            ViewLinkAnalyticsDTO dto = new ViewLinkAnalyticsDTO();
+            dto.setClickCount(mapping.getClickCount());
+            dto.setOriginalUrl(mapping.getOriginalUrl());
+            dto.setShortCode(mapping.getShortCode());
+            dto.setDeviceType(viewLink.getDeviceType());
+            dto.setCountry(viewLink.getCountry());
+            dto.setRegion(viewLink.getRegion());
+            dto.setReferrer(viewLink.getReferrer());
+            dto.setClickedAt(viewLink.getClickedAt());
+            dto.setPlatform(viewLink.getPlatform());
+            dto.setBrowser(viewLink.getBrowser());
 
-      List<ViewLinkAnalyticsDTO> dtoList = viewLinks.stream().map(viewLink -> {
-          ViewLinkAnalyticsDTO dto = new ViewLinkAnalyticsDTO();
-          dto.setClickCount(mapping.getClickCount()); // total clicks for URL
-          dto.setOriginalUrl(mapping.getOriginalUrl());
-          dto.setShortCode(mapping.getShortCode());
-          dto.setDeviceType(viewLink.getDeviceType());
-          dto.setCountry(viewLink.getCountry());
-          dto.setRegion(viewLink.getRegion());
-          dto.setReferrer(viewLink.getReferrer());
-          dto.setClickedAt(viewLink.getClickedAt());
-          dto.setPlatform(viewLink.getPlatform());
-          dto.setBrowser(viewLink.getBrowser());
-          return dto;
-      }).toList();
+            dto.setTitle(mapping.getTitle());
+            dto.setDescription(mapping.getDescription());
+            dto.setImageUrl(mapping.getImageUrl());
+            dto.setFaviconUrl(mapping.getFaviconUrl());
 
-      return ResponseEntity.ok(dtoList);
+            return dto;
+        }).toList();
 
-  }
-
+        return ResponseEntity.ok(dtoList);
+    }
 }
