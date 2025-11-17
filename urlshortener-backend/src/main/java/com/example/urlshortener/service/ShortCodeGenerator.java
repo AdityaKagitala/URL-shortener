@@ -6,18 +6,19 @@ import java.security.SecureRandom;
 @Component
 public class ShortCodeGenerator {
 
-    private static final String ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    /**
-     * Generate a random short code of given length.
-     */
-    public String generate(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            int idx = RANDOM.nextInt(ALPHABET.length());
-            sb.append(ALPHABET.charAt(idx));
+    public String encodeBase62(long id) {
+        StringBuilder sb = new StringBuilder();
+
+        if (id == 0) return "0";
+
+        while (id > 0) {
+            int remainder = (int) (id % 62);
+            sb.append(BASE62.charAt(remainder));
+            id /= 62;
         }
-        return sb.toString();
+
+        return sb.reverse().toString();
     }
 }

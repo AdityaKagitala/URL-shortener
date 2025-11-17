@@ -3,6 +3,9 @@
   min-height: calc(100vh - 80px);
   padding: 40px 20px;
   background-color: #c5e6fa;
+  background-image: linear-gradient(135deg, rgba(197, 230, 250, 0.95) 0%, rgba(197, 230, 250, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .home-container {
@@ -59,14 +62,109 @@
 
 .shortener-form {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===== Custom Fields Row ===== */
+.custom-fields-row {
+  display: flex;
+  gap: 50px !important;
+  width: 100%;
+  align-items: flex-start;
+  margin-bottom: 0;
+  justify-content: flex-start;
+}
+
+/* ===== Custom Alias Field ===== */
+.custom-alias-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 1 auto;
+  max-width: 30%;
+  min-width: 180px;
+  margin-left: 0;
+}
+
+.custom-alias-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+}
+
+.custom-alias-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border: 2px solid #007bff;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: 'Poppins', sans-serif;
+  outline: none;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.custom-alias-input:focus {
+  border-color: #0056b3;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.15);
+}
+
+.custom-alias-input::placeholder {
+  color: #adb5bd;
+}
+
+/* ===== Link Title Field ===== */
+.link-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 1 auto;
+  max-width: 30%;
+  min-width: 180px;
+  margin-right: 40px;
+}
+
+.link-title-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+}
+
+.link-title-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border: 2px solid #007bff;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: 'Poppins', sans-serif;
+  outline: none;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.link-title-input:focus {
+  border-color: #0056b3;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.15);
+}
+
+.link-title-input::placeholder {
+  color: #adb5bd;
+}
+
+/* ===== URL and Submit Button Wrapper ===== */
+.url-submit-wrapper {
+  display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
 }
 
 .input-wrapper {
   position: relative;
   flex: 1;
-  min-width: 300px;
 }
 
 .input-prefix-icon {
@@ -103,6 +201,7 @@
 .shorten-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 16px 32px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -115,6 +214,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .shorten-btn:hover:not(:disabled) {
@@ -580,17 +680,21 @@
     padding: 25px 20px;
   }
 
-  .shortener-form {
+  .custom-fields-row {
     flex-direction: column;
   }
 
-  .input-wrapper {
-    min-width: 100%;
+  .custom-alias-label,
+  .link-title-label {
+    font-size: 14px;
+  }
+
+  .url-submit-wrapper {
+    flex-direction: column;
   }
 
   .shorten-btn {
     width: 100%;
-    justify-content: center;
   }
 
   .history-header-bar {
@@ -625,6 +729,12 @@
   }
 
   .url-input {
+    font-size: 14px;
+    padding: 14px 14px 14px 44px;
+  }
+
+  .custom-alias-input,
+  .link-title-input {
     font-size: 14px;
     padding: 14px 14px 14px 44px;
   }

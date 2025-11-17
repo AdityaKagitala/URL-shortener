@@ -72,31 +72,53 @@ public class UrlService {
         return "https://www.google.com/s2/favicons?domain=" + domain;
     }
 
-    public UrlMapping createShortUrl(String originalUrl) {
+
+    @Transactional
+    public UrlMapping createShortUrl(String originalUrl, String customAlias) {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-        // generate code and ensure no collision
-        for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
-            String code = codeGenerator.generate(codeLength);
-            if (!urlrepository.existsByShortCode(code)) {
-                UrlMapping mapping = UrlMapping.builder()
-                        .originalUrl(originalUrl)
-                        .shortCode(code)
-                        .createdAt(Instant.now())
-                        .clickCount(0L)
-                        .user(user)
-                        .faviconUrl(getFaviconWithFallback(originalUrl))
 
-                        .build();
-                return urlrepository.save(mapping);
+        // Custom alias
+        if (customAlias != null && !customAlias.isBlank()) {
+
+            if (urlrepository.existsByShortCode(customAlias)) {
+                throw new RuntimeException("Custom alias already taken!");
             }
+
+            UrlMapping mapping = UrlMapping.builder()
+                    .originalUrl(originalUrl)
+                    .shortCode(customAlias)
+                    .createdAt(Instant.now())
+                    .clickCount(0L)
+                    .user(user)
+                    .faviconUrl(getFaviconUrl(originalUrl))
+                    .build();
+
+            return urlrepository.save(mapping);
         }
-        // if we reach here, throw runtime; in real app choose larger code length
-        throw new RuntimeException("Failed to generate unique short code. Try again.");
+
+        // STEP 1 — Save without shortcode so DB generates ID
+        UrlMapping tmp = UrlMapping.builder()
+                .originalUrl(originalUrl)
+                .createdAt(Instant.now())
+                .clickCount(0L)
+                .user(user)
+                .faviconUrl(getFaviconUrl(originalUrl))
+                .build();
+
+        tmp = urlrepository.save(tmp);
+
+        // STEP 2 — Encode ID to Base62 with your generator
+        String shortCode = codeGenerator.encodeBase62(tmp.getId());
+
+        // STEP 3 — Save again with shortCode
+        tmp.setShortCode(shortCode);
+        return urlrepository.save(tmp);
     }
+
+
 
     /**
      * Find mapping by shortCode

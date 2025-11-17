@@ -30,7 +30,7 @@ public class ApiController {
     @PostMapping("/shorten")
     public ResponseEntity<UrlResponse> shorten(@Valid @RequestBody UrlRequest req) {
 
-        UrlMapping mapping = urlService.createShortUrl(req.getOriginalUrl());
+        UrlMapping mapping = urlService.createShortUrl(req.getOriginalUrl(),req.getCustomAlias());
 
         String shortUrl = appBaseUrl.endsWith("/") ? appBaseUrl + mapping.getShortCode()
                                                    : appBaseUrl + "/" + mapping.getShortCode();

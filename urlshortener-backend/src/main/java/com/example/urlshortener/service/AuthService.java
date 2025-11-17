@@ -17,7 +17,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public String registerUser(String username, String password) {
+    public String registerUser(String username, String password)  {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("Username already taken!");
         }

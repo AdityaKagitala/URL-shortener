@@ -50,12 +50,12 @@ public class RedirectController {
         String browser = getBrowser(userAgent);
 
         // Referrer
-        String referrer = request.getHeader("Referer");
-        String platform = getReferringPlatform(referrer);
+        String referer = request.getHeader("Referer");
+        String platform = getReferringPlatform(referer);
 
 
         //Save click info
-        viewLinkService.saveClickData(shortCode,deviceType,referrer,platform,browser);
+        viewLinkService.saveClickData(shortCode,deviceType,referer,platform,browser);
 
 
         // Total ClickCount
@@ -69,21 +69,21 @@ public class RedirectController {
 
     }
 
-    private String getReferringPlatform(String referrer) {
-        if (referrer == null || referrer.isEmpty()) return "Direct";
+    private String getReferringPlatform(String referer) {
+        if (referer == null || referer.isEmpty()) return "Direct";
 
-        referrer = referrer.toLowerCase();
+        referer = referer.toLowerCase();
 
-        if (referrer.contains("facebook.com")) return "Facebook";
-        if (referrer.contains("twitter.com")) return "Twitter";
-        if (referrer.contains("t.me") || referrer.contains("telegram.me")) return "Telegram";
-        if (referrer.contains("youtube.com") || referrer.contains("youtu.be")) return "YouTube";
-        if (referrer.contains("linkedin.com")) return "LinkedIn";
-        if (referrer.contains("instagram.com")) return "Instagram";
+        if (referer.contains("facebook.com")) return "Facebook";
+        if (referer.contains("twitter.com")) return "Twitter";
+        if (referer.contains("t.me") || referer.contains("telegram.me")) return "Telegram";
+        if (referer.contains("youtube.com") || referer.contains("youtu.be")) return "YouTube";
+        if (referer.contains("linkedin.com")) return "LinkedIn";
+        if (referer.contains("instagram.com")) return "Instagram";
 
         // Fallback: extract domain from URL
         try {
-            java.net.URI uri = new java.net.URI(referrer);
+            java.net.URI uri = new java.net.URI(referer);
             String host = uri.getHost();
             if (host == null) return "Unknown";
             if (host.startsWith("www.")) host = host.substring(4);

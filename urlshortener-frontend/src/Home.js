@@ -1,14 +1,24 @@
 import "./Home.css";
 import React, { useState, useEffect } from "react";
 import axiosInstance from "./api/axiosConfig";
-import { FaCopy, FaLink, FaChevronDown, FaChevronUp,FaTrash, FaExternalLinkAlt, FaCalendarAlt, FaClock,FaShareAlt} from "react-icons/fa";
-import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
-
+import {
+  FaCopy,
+  FaLink,
+  FaChevronDown,
+  FaChevronUp,
+  FaTrash,
+  FaExternalLinkAlt,
+  FaCalendarAlt,
+  FaClock,
+  FaShareAlt,FaBeer,
+} from "react-icons/fa";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
-
   const [originalUrl, setOriginalUrl] = useState("");
+  const [customAlias, setCustomAlias] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
@@ -16,15 +26,15 @@ function Home() {
   const [searchDate, setSearchDate] = useState("");
   const [historyLoading, setHistoryLoading] = useState(true);
 
-
-  useEffect(() => {  fetchHistory()  }, []);
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const navigate = useNavigate();
 
   const handleViewAnalytics = (shortCode) => {
     navigate(`/viewLink/${shortCode}`);
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,15 +47,33 @@ function Home() {
     setLoading(true);
 
     try {
-      const response = await axiosInstance.post("/shorten", { originalUrl });
+      const response = await axiosInstance.post("/shorten", {
+        originalUrl,
+        customAlias, // SEND CUSTOM ALIAS
+        linkTitle, // SEND LINK TITLE
+      });
+
       const short = response.data.shortUrl;
       setShortUrl(short);
+
       await fetchHistory();
       setOriginalUrl("");
+      setCustomAlias("");
+      setLinkTitle("");
+
       toast.success("URL shortened successfully!");
     } catch (error) {
       console.error("Shortening error:", error);
-      toast.error("Failed to shorten URL. Please try again.");
+
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message?.includes("Custom alias already taken")
+      ) {
+        toast.error("Custom alias already taken. Try another one!");
+      } else {
+        toast.error("Failed to shorten URL. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -68,28 +96,24 @@ function Home() {
       if (Array.isArray(response.data)) {
         setHistory(response.data);
       } else {
-        console.warn("Expected array, got:", response.data);
         setHistory([]);
       }
     } catch (error) {
-      console.error("Error fetching history:", error);
       setHistory([]);
     } finally {
       setHistoryLoading(false);
     }
   };
-  
+
   const handleDelete = async (shortCode) => {
     try {
       await axiosInstance.delete(`/delete/${shortCode}`);
-      setHistory(prev => prev.filter(item => item.shortCode !== shortCode));
+      setHistory((prev) => prev.filter((item) => item.shortCode !== shortCode));
       toast.info("Link deleted successfully!", { autoClose: 1500 });
     } catch (error) {
       toast.error("Failed to delete link");
     }
   };
-  
-
 
   const filteredHistory = history
     .slice()
@@ -110,24 +134,64 @@ function Home() {
               <FaLink />
             </div>
             <h1 className="hero-title">Shorten Your Links</h1>
-            <p className="hero-subtitle">Transform long URLs into short, shareable links in seconds</p>
+            <p className="hero-subtitle">
+              Transform long URLs into short, shareable links in seconds
+            </p>
           </div>
 
           {/* URL Shortener Card */}
           <div className="shortener-card">
             <form onSubmit={handleSubmit} className="shortener-form">
-              <div className="input-wrapper">
-                <FaLink className="input-prefix-icon" />
-                <input
-                  type="url"
-                  placeholder="Paste your long URL here..."
-                  value={originalUrl}
-                  onChange={(e) => setOriginalUrl(e.target.value)}
-                  className="url-input"
-                  required
-                />
+
+              {/* Custom Alias and New Field Row */}
+              <div className="custom-fields-row">
+
+                {/* Link Title Input */}
+                <div className="link-title-wrapper">
+                  <label className="link-title-label">Link Title:</label>
+                  <div className="input-wrapper">
+                    <FaBeer className="input-prefix-icon" />
+                    <input
+                      type="text"
+                      placeholder="Enter title for your link (optional)"
+                      value={linkTitle}
+                      onChange={(e) => setLinkTitle(e.target.value)}
+                      className="link-title-input"
+                    />
+                  </div>
+                </div>
+                
+                {/* Custom Alias Input */}
+                <div className="custom-alias-wrapper">
+                  <label className="custom-alias-label">Custom Alias:</label>
+                  <div className="input-wrapper">
+                    <FaBeer className="input-prefix-icon" />
+                    <input
+                      type="text"
+                      placeholder="Enter custom alias (optional) e.g. aditya123"
+                      value={customAlias}
+                      onChange={(e) => setCustomAlias(e.target.value)}
+                      className="custom-alias-input"
+                    />
+                  </div>
+                </div>
               </div>
-              <button type="submit" disabled={loading} className="shorten-btn">
+
+              {/* Long URL Input and Submit Button */}
+              <div className="url-submit-wrapper">
+                <div className="input-wrapper">
+                  <FaLink className="input-prefix-icon" />
+                  <input
+                    type="url"
+                    placeholder="Paste your long URL here..."
+                    value={originalUrl}
+                    onChange={(e) => setOriginalUrl(e.target.value)}
+                    className="url-input"
+                    required
+                  />
+                </div>
+
+                <button type="submit" disabled={loading} className="shorten-btn">
                 {loading ? (
                   <>
                     <span className="spinner"></span>
@@ -140,6 +204,7 @@ function Home() {
                   </>
                 )}
               </button>
+              </div>
             </form>
 
             {shortUrl && (
@@ -149,13 +214,17 @@ function Home() {
                   Your shortened URL:
                 </div>
                 <div className="result-box">
-                  <a href={shortUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                  <a
+                    href={shortUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="result-link"
+                  >
                     {shortUrl}
                   </a>
                   <button
                     className="copy-btn"
                     onClick={() => copyToClipboard(shortUrl)}
-                    title="Copy to clipboard"
                   >
                     <FaCopy />
                   </button>
@@ -184,7 +253,6 @@ function Home() {
                   value={searchDate}
                   onChange={(e) => setSearchDate(e.target.value)}
                   className="date-input"
-                  placeholder="Filter by date"
                 />
               </div>
               <button
@@ -208,50 +276,51 @@ function Home() {
                   {filteredHistory.map((item, index) => (
                     <div key={index} className="history-card">
                       <div className="card-content">
-                      <div className="url-info">
-                          <label className="url-label">TITLE:</label>
-                          <p className="original-url" title={index}>
-                           name {index}
-                          </p>
-                        </div>
-
                         <div className="url-info">
                           <label className="url-label">Original URL</label>
-                          {/*Website icon*/}
-                          
-                          <p className="original-url" title={item.originalUrl}>
-                          <div className="history-item">
-                            <img src={item.faviconUrl} alt="icon"  style={{ width: 24, height: 24, marginRight: 10 }}/>
-                            {item.originalUrl}
-                          </div>
+
+                          <p className="original-url">
+                            <div className="history-item">
+                              <img
+                                src={item.faviconUrl}
+                                alt="icon"
+                                style={{
+                                  width: 24,
+                                  height: 24,
+                                  marginRight: 10,
+                                }}
+                              />
+                              {item.originalUrl}
+                            </div>
                           </p>
                         </div>
 
                         <div className="url-info">
                           <label className="url-label">Short URL</label>
-                          <div className="short-url-container">
-                            <a
-                              href={item.shortUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="short-url"
-                            >
-                              {item.shortUrl}
-                            </a>
-                          </div>
+                          <a
+                            href={item.shortUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="short-url"
+                          >
+                            {item.shortUrl}
+                          </a>
                         </div>
 
                         {item.createdAt && (
                           <div className="card-footer">
                             <span className="timestamp">
                               <FaClock />
-                              {new Date(item.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                              {new Date(item.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
                             </span>
                           </div>
                         )}
@@ -261,43 +330,38 @@ function Home() {
                         <button
                           className="action-btn copy"
                           onClick={() => copyToClipboard(item.shortUrl)}
-                          title="Copy link"
                         >
                           <FaCopy />
                         </button>
+
                         <button
                           className="action-btn share"
                           onClick={() => copyToClipboard(item.shortUrl)}
-                          title="Copy link"
                         >
                           <FaShareAlt />
                         </button>
+
                         <button
                           className="action-btn delete"
                           onClick={() => handleDelete(item.shortCode)}
-                          title="Delete link"
                         >
                           <FaTrash />
                         </button>
-                        <button className="view-tracking-btn" onClick={() => handleViewAnalytics(item.shortCode)}>
-                             View Tracking
-                          </button>
+
+                        <button
+                          className="view-tracking-btn"
+                          onClick={() => handleViewAnalytics(item.shortCode)}
+                        >
+                          View Tracking
+                        </button>
                       </div>
-                      
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="empty-state">
                   <FaLink className="empty-icon" />
-                  <p className="empty-title">
-                    {searchDate ? 'No links found for this date' : 'No links yet'}
-                  </p>
-                  <p className="empty-subtitle">
-                    {searchDate
-                      ? 'Try selecting a different date'
-                      : 'Start by shortening your first URL above'}
-                  </p>
+                  <p>No links found</p>
                 </div>
               )}
             </div>
